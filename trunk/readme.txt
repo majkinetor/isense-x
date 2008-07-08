@@ -1,4 +1,4 @@
-ISense - IntelliSense script for AutoHotKey language
+ISense - IntelliSense script for AutoHotKey language 
 
 
 OVERVIEW
