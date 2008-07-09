@@ -6,10 +6,7 @@ CoordMode, Tooltip, Screen
 
 	;NAMESPACES: ISense, Info, Tooltip, ISHelp, RoutineInfoGui, ActiveGoTo
 	ISENSE_Init()	
-return	
-
-
-^l::reload
+return
 
 
 ISENSE_Init( lastGUI=0, subMenu="", bStandalone=true )
@@ -54,7 +51,6 @@ ISENSE_Init( lastGUI=0, subMenu="", bStandalone=true )
 																															 
 	;ISSetup_Create()
 
-
 	OnExit,  ISense_OnExit
 
   ActiveGoTo_Init()   ;*** Starts ActiveGoto..
@@ -68,6 +64,7 @@ ISENSE_Init( lastGUI=0, subMenu="", bStandalone=true )
 
 ;---------------------------------------------------------------------------------------------
 ISense_OnExit:
+  Gosub, RoutineInfoGui_Close
 	ExitApp
 return
 ;---------------------------------------------------------------------------------------------
@@ -137,6 +134,7 @@ Isense_HandleSelection( pSel )  {
   global ISense_lastMatch, ISense_monitor, ISense_lastWord, ISense_selection
   static init, Lang_Delim, LangRE
 
+  IfEqual, pSel,, return
   If !init  {     ;--this can be pulled from ini...
     Lang_Delim := ","
     LangRE     := "J)("
@@ -156,6 +154,7 @@ Isense_HandleSelection( pSel )  {
     mIgnore ? ( pSel := mStart . mEnd )
     If mFound
       break
+    Sleep, 1
   }
 
   If SubStr( mCmnd, 0, 1 ) = "("
@@ -253,7 +252,6 @@ ISense_WatchForInput()
 			StringRight c, ISense_lastWord, 1					;get the key before last one
 			ISense_lastWord .= lastKey
 			ISense_Trace(Isense_lastWord)
-; 		ToolTip, % Isense_lastWord
 			if (ISense_paramMode && lastKey = ",")
 			{
 				;check for escape char
@@ -441,7 +439,7 @@ Isense_EEvaluate(pEndKey)
 }
 
 ;----------------------------------------------------------------------------------------------
-;EVENTS: Reset mode from paramMode
+;EVENTS: Reset modefrom paramMode
 ;
 Isense_EResetMode()
 {
@@ -964,10 +962,10 @@ down::
 	ISense_EResetMode()
 Return
 
-pgup::		
-pgdn::  
-end::   
-home::  
+pgup::
+pgdn::
+end::
+home::
 	If (ISHelp_visible)
 	{
 		ControlSend, ,{%A_ThisHotKey%},	ahk_id %ISHelp_hwnd%
