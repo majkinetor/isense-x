@@ -55,9 +55,7 @@ ActiveGoTo_Init()  {
       ^(?P<UnSaved> \* )?(?P<Name>.*) - metapad$                                ;Metapad
       ^Programmers Notepad 2 - \[(?P<Name>.*)(?P<UnSaved>\*)?\]$                ;Programers Notepad
     )
-;       ^EditPlus \[Default\] - \[(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus
-;       EditPlus [Default] - [C:\Documents and Settings\freakkk\Desktop\iSense_X\New AutoHotkey Script (2).ahk]
-;       ^EditPlus(?: - \[)?(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus
+;       ^EditPlus(?: - \[)?(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus (original regex)
 
   ;Class or Window Title of GoTo Window for the different editors     
   ActiveGoto_aGotoWinClassOrTitle =
@@ -77,7 +75,7 @@ ActiveGoTo_Init()  {
        ahk_class #32770           ;Metapad
        ahk_class #32770           ;Programers Notepad
     )
-;        ahk_class #32770           ;EditPlus
+;        ahk_class #32770           ;EditPlus  (orginal class..)
 
   ;ShortCut for GoTo in Editor, in case it is different from Ctrl+g
   ActiveGoto_aGotoShortCut =
@@ -189,8 +187,6 @@ ActiveGoTo_Init()  {
   Menu, Context, Add, Slide Left        , ActiveGoTo_MenuDispatch
   Menu, Context, Add, Adjust Height     , ActiveGoTo_MenuDispatch
   Menu, Context, Add, Hide On Lost Focus, ActiveGoTo_MenuDispatch
-;   Menu, Context, Add
-;   Menu, Context, Add, Exit, RoutineInfoGui_Close
 
   ;check for open editors
   ActiveGoTo_EditorTypeCheck()
@@ -751,7 +747,6 @@ ActiveGoTo_EditorTypeCheck()  {       ; GetEditorHWNDandType - Check for open ed
   ;if a goto jump is performed the same time.
   DetectHiddenWindows, On         ;detect editor also when minimized
   WinGet, IDsOfAllWindows, List
-  ttt :=""
   Loop, %IDsOfAllWindows% {
     HWND := IDsOfAllWindows%A_Index%
     If HWND in %ListOfHWND%
