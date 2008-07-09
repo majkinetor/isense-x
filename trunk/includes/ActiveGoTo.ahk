@@ -13,8 +13,8 @@ ActiveGoto EDITOR ISSUES:
                                 but dynamic func's are still added to cmnds on
                                 windows 1st activation.
 
-  SciTE, Syn         - Cannot fully track file changes through titlebar;
-                       Doesn't show full path to file.
+  SciTE, Syn, Notepad         - Cannot fully track file changes through titlebar;
+                                Doesn't show full path to file.
 
   Notepad2  - Works only w/ 'Settings -> Window Title Display -> Full PathName' setting.
 
@@ -25,7 +25,6 @@ ActiveGoto EDITOR ISSUES:
     ConTEXT
     UltraEdit-32
     EditPlus
-    Notepad
     EmEditor
     Metapad
     Programers Notepad
@@ -47,7 +46,7 @@ ActiveGoTo_Init()  {
       ^(?P<UnSaved>\*)? ?(?P<Name>.*?)(?: \(Read only\))? - Notepad2$           ;Notepad2 
       ^ConTEXT(?: - \[)?(?P<Name>.*?)(?P<UnSaved> \*?#?)?(?: \[ReadOnly\])?\]?$ ;ConTEXT
       ^UltraEdit-32(?: - \[)?(?P<Name>.*?)(?P<UnSaved>\*)?(?: R/O)?\]?$         ;UltraEdit
-      ^EditPlus(?: - \[)?(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus
+      ^EditPlus.* - \[(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus
       ^(?P<Name>.*) - Notepad$                                                  ;Notepad
       ^(?P<Name>.*?)(?P<UnSaved> \*)? - EmEditor$                               ;EmEditor
       ^SynPlusEditor-\[(?P<Name>.*)\]$                                          ;SynPlus
@@ -56,6 +55,9 @@ ActiveGoTo_Init()  {
       ^(?P<UnSaved> \* )?(?P<Name>.*) - metapad$                                ;Metapad
       ^Programmers Notepad 2 - \[(?P<Name>.*)(?P<UnSaved>\*)?\]$                ;Programers Notepad
     )
+;       ^EditPlus \[Default\] - \[(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus
+;       EditPlus [Default] - [C:\Documents and Settings\freakkk\Desktop\iSense_X\New AutoHotkey Script (2).ahk]
+;       ^EditPlus(?: - \[)?(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus
 
   ;Class or Window Title of GoTo Window for the different editors     
   ActiveGoto_aGotoWinClassOrTitle =
@@ -66,7 +68,7 @@ ActiveGoTo_Init()  {
        ahk_class #32770           ;Notepad2
        ahk_class TForm            ;ConTEXT
        ahk_class #32770           ;UltraEdit-32
-       ahk_class #32770           ;EditPlus
+       ahk_class Afx:400000:8:10011:0:40727           ;EditPlus
        ahk_class #32770           ;Notepad
        ahk_class #32770           ;EmEditor
        ahk_class TGoToDialog      ;SynPlus
@@ -75,6 +77,7 @@ ActiveGoTo_Init()  {
        ahk_class #32770           ;Metapad
        ahk_class #32770           ;Programers Notepad
     )
+;        ahk_class #32770           ;EditPlus
 
   ;ShortCut for GoTo in Editor, in case it is different from Ctrl+g
   ActiveGoto_aGotoShortCut =
@@ -105,7 +108,7 @@ ActiveGoTo_Init()  {
        True     ;ConTEXT
        True     ;UltraEdit-32
        True     ;EditPlus
-       False    ;Notepad
+       True     ;Notepad
        True     ;EmEditor
        False    ;SynPlus
        False    ;Syn
@@ -123,7 +126,7 @@ ActiveGoTo_Init()  {
        3     ;Notepad2
        4     ;ConTEXT
        4     ;UltraEdit-32
-       2     ;EditPlus
+       3     ;EditPlus
        1     ;Notepad
        2     ;EmEditor
        4     ;SynPlus
@@ -186,8 +189,8 @@ ActiveGoTo_Init()  {
   Menu, Context, Add, Slide Left        , ActiveGoTo_MenuDispatch
   Menu, Context, Add, Adjust Height     , ActiveGoTo_MenuDispatch
   Menu, Context, Add, Hide On Lost Focus, ActiveGoTo_MenuDispatch
-  Menu, Context, Add
-  Menu, Context, Add, Exit, RoutineInfoGui_Close
+;   Menu, Context, Add
+;   Menu, Context, Add, Exit, RoutineInfoGui_Close
 
   ;check for open editors
   ActiveGoTo_EditorTypeCheck()
@@ -203,7 +206,7 @@ ActiveGoTo_Init()  {
   ActiveGoTo_ToggleLeft      := !ReadIni("ToggleLeft"     , 1)
   ActiveGoTo_Slide           := !ReadIni("Slide"          , 1)
   ActiveGoTo_AdjustHeight    := !ReadIni("AdjustHeight"   , 1)
-  ActiveGoTo_HideOnLostFocus := !ReadIni("HideOnLostFocus", 0)
+  ActiveGoTo_HideOnLostFocus := !ReadIni("HideOnLostFocus", 1)
 
   ActiveGoTo_MenuHandler( "Frame" )              ;ToggleFrame
   ActiveGoTo_MenuHandler( "Slide Left" )         ;ToggleLeft
@@ -254,7 +257,7 @@ RoutineInfoGui_Create() {
   IniRead, Pos, Config.ini, ActiveGoTo, Pos, x0
   IniRead, Size, Config.ini, ActiveGoTo, Size,
   Gui, %ActiveGoTo_GUI%:Show, %Pos% %Size% Hide
-  
+
 ;   WinWaitClose, ahk_id %ActiveGoTo_HWND%  ;--waiting for gui to close (modal simulation..)
 ;   return ReturnCode                       ;--returning value
 return
@@ -352,9 +355,10 @@ RoutineInfoGui_Close:                       ;exit when gui closes
   If !GuiVisible
       Gui, %ActiveGoTo_GUI%:Show, Hide
   DetectHiddenWindows, On
-  WinGetPos, X, Y, , , ahk_id %ActiveGoTo_HWND%
+  WinGetPos, X, Y, W, H, ahk_id %ActiveGoTo_HWND%
   DetectHiddenWindows, Off
   IniWrite, x%X% y%Y%, Config.ini, ActiveGoTo, Pos
+  IniWrite, w%W% h%H%, Config.ini, ActiveGoTo, Size
 ;   ExitApp
 ; return
 ;-------
@@ -396,7 +400,6 @@ RoutineInfoGui_Size:
   Anchor("TxtOffset", "x",  "")
   Anchor("Offset",    "x",  True)
   Anchor("SelItem",   "wh", "")
-  IniWrite, w%A_GuiWidth%, Config.ini, ActiveGoTo, Size
 Return
 ;----------------------------------------------------------------------------------------------
 
@@ -530,7 +533,6 @@ SendGoTo(Position)  {
     WinActivate, ahk_id %ActiveGoTo_EditorHWND%
     WinWaitActive, ahk_id %ActiveGoTo_EditorHWND%
     Send, %ActiveGoto_aGotoShortCut%
-    WinWaitActive, %ActiveGoto_aGotoWinClassOrTitle%
     Send, %Position%{Enter}
 }
 
@@ -749,16 +751,20 @@ ActiveGoTo_EditorTypeCheck()  {       ; GetEditorHWNDandType - Check for open ed
   ;if a goto jump is performed the same time.
   DetectHiddenWindows, On         ;detect editor also when minimized
   WinGet, IDsOfAllWindows, List
+  ttt :=""
   Loop, %IDsOfAllWindows% {
     HWND := IDsOfAllWindows%A_Index%
     If HWND in %ListOfHWND%
         Continue
     WinGetTitle, WinTitle, ahk_id %HWND%
+    IfEqual, WinTitle,, Continue
+
     Loop, %ActiveGoTo_aEditorTitleRE0%{
       If RegExMatch(WinTitle, ActiveGoTo_aEditorTitleRE%A_Index%, File){
         EType%HWND% = %A_Index%
         ListOfHWND .= (ListOfHWND ? "," : "") . HWND
         GroupAdd, ActiveGoTo_HtkGrp, ahk_id %HWND%
+        break
       }
     }
   }

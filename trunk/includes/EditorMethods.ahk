@@ -28,7 +28,7 @@ ISense_GetLineMethod1()
 /*
 GetLineMethod2:  Used for editors where selected txt can be retrieved by highlighting & ControlGet
 
-  Editors:  SciTE, Notepad++, EditPlus, EmEditor, Programers Notepad
+  Editors:  SciTE, Notepad++, EmEditor, Programers Notepad
 */
 
 ISense_GetLineMethod2()
@@ -56,7 +56,7 @@ ISense_GetLineMethod2()
 GetLineMethod3:  Temporarily uses windows clipboard to retrieve text.
                  Used for editors that '{right}' returns your position to right side of selected text.
 
-  Editors:  PSPad, Notepad2, Crimson, Metapad
+  Editors:  PSPad, Notepad2, Crimson, Metapad, EditPlus
 */
 
 ISense_GetLineMethod3()

@@ -37,7 +37,7 @@ ISense_Trace(pMsg, add = false)
 	static last
 
 	if (add)
-		pMsg := last . pMsg  
+		pMsg := last . pMsg
 
 	if (ISense_trace)
 		ToolTip, %pMsg%, 0, 0 
