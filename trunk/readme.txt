@@ -11,7 +11,8 @@ without ever leaving your editor.
 
 FEATURES
 ---------
-- Info window that contain all commands that start with currently typed prefix
+- Info window that contain all commands, functions and user functions that start with currently typed prefix
+- ActiveGoTo integration 
 - Parameter display and tracking
 - Full help on last typed command
 - Works on already typed sentences
@@ -40,29 +41,8 @@ editor choose different method or write your own.
 
 
 
-HOW TO WRITE METHOD
--------------------
-Methods are located in includes\editor folder, with "Method N.ahk" names. Method is single AHK function,
-ISense_GetLine witch returns text from the current cursor position to the beginning of the line, for 
-supported editors. It also contains INI section [EDITOR] whree you specify supported editors for that 
-method.
-
-To write new method, start by duplicating some of the method files. Save it under any name that doesn't 
-exist and replace the internals of the ISense_GetLine function.	Whatever you do, cursor must be returned
-to the same position as before you stared. When you grab the line, return it to the ISense, and thats all.
-Afterwards, go to Setup and activate the new method witch will be visible in the list as soon as you save it.\
-All supported editors specified by the INI part of the method will also be added to the editor list.
-
-When you discover that your editor works with some of the already present methods and editor itself is not
-in the editor list, please inform me on the forum so I can update the editor list. Do the same if you wrote 
-the new method for your editor.
-
-
 CONFIRMED EDITORS:
-
-Method1 - EditPlus, EmEditor, Programmers NotePad 2, PSPad, Scite 
-Method2 - Crimson Editor, UltraEdit, SynPlus, Syn 
-Method3 - Notepad, Metapad
+Notepad, SciTE, Notepad++, EmEditor, Programers Notepad, PSPad, Notepad2, Crimson, Metapad, EditPlus, ConTEXT, UltraEdit-32, SynPlus, Syn
 
 
 
@@ -78,8 +58,7 @@ Suggestions & feedback are appreciated.
 
 TO-DO
 -----
-- Functions
-- User variables and functions
+- User variables and functions from includes
 - Language definition file so it is able to work with other languages.
 
 
@@ -87,16 +66,20 @@ THANK YOU
 ---------
 Rajat for inspiration
 All who tested this script
-Chris for creating AutoHotKey
 
 
 ABOUT
 -----
-Created by Miodrag Milic  
+Created by 
+
+Miodrag Milic  
 miodrag.milic@gmail.com
 
+freakk
+coreydwilliams@gmail.com
 
-code.r-moth.com		www.r-moth.com		 r-moth.deviantart.com
 
-Belgrade
-23. Januar 2007
+Homepage:
+http://code.google.com/p/isense-x/
+
+2007,2008
