@@ -1,6 +1,6 @@
 = Overview =
 
-This is command completition and parameter tracking script for AutoHotKey language. It is made to help you edit your code faster, to locate exact parameter position with complex commands (like InputBox), and generaly, provide you help with AutoHotKey without ever leaving your editor. 
+This is command completition and parameter tracking script for [http://www.autohotkey.com AutoHotKey] language. It is made to help you edit your code faster, to locate exact parameter position with complex commands (like [http://www.autohotkey.com/docs/commands/InputBox.htm InputBox]), and generaly, provide you help with AutoHotKey without ever leaving your editor. 
 
 
 = Features =
