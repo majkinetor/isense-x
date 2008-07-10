@@ -1,0 +1,3 @@
+  * Functions from includes and user variable completition 
+  * User function help by parsing [http://www.autohotkey.com/forum/topic20361.html natural docs] comments
+  * Language independence
