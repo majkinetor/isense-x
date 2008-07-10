@@ -6,7 +6,7 @@
   * ActiveGoTo integration (thx Rajat) 
 
 [http://www.autohotkey.net/~majkinetor/ISense/Isense_15.zip 1.5]
-  * IE dll removed and now ISense use IE COM control created by Sean. This magicaly removed all bugs that were present so far, at least from what I can see from first several tests. 
+  * IE dll removed and now ISense use IE COM control created by Sean. This magicaly removed all bugs that were present so far.
 
 [http://www.autohotkey.net/~majkinetor/ISense/Isense_11.zip 1.3 b1]
   * Setup dialog redesigned and new options added: 
