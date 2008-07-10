@@ -19,13 +19,14 @@ ISENSE_Init( lastGUI=0, subMenu="", bStandalone=true )
 	
 	;set merging environment
 	Isense_title		:= "ISense"	
-	Isense_version		:= "1.5.2"
+	Isense_version		:= "1.5.3"
 	ISense_standalone	:= bStandalone
 	ISense_trayMenu		:= subMenu
-
+  
+ 
 	ISense_SetMenu()
 	hasConfig := ISense_GetConfig()
-	
+
 	;create GUIs
 	Info_Create( lastGui + 1 )			; ceate info window
 	ISense_CreateFonts(lastGui + 3)	; create font handles
@@ -876,14 +877,23 @@ ISense_TrayHandler()
 	
 	if ( A_ThisMenuItem = "About" )
 	{
-		msg := ""
-		msg .= Isense_title . "  " . Isense_version . "`n`n`n"
-		msg .= "Created by:`t`t    Miodrag Milic`n"
-		msg .= "e-mail:`t`t miodrag.milic@gmail.com`n`n`n"
-		msg .= "Mod by:`t`t`t    freakkk`n"
-		msg .= "e-mail:`t`t coreydwilliams@gmail.com`n`n`n"
-  	msg .= "code.r-moth.com`nwww.r-moth.com`nr-moth.deviantart.com`n`n"
-		msg .= "May 2007 / August 2007`n"
+		
+		msg = 
+		(LTrim
+			%Isense_title%  %Isense_version%
+
+			Created by:	
+
+			majkinetor <miodrag.milic@gmail.com>
+			freakkk <coreydwilliams@gmail.com>
+				
+			HomePage:
+			http://code.google.com/p/isense-x/
+
+
+			2007, 2008
+		)
+
 		MsgBox 48, About, %msg%
 	}
 
