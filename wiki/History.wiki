@@ -1,3 +1,7 @@
+[http://isense-x.googlecode.com/files/ISense_1.5.4.rar 1.5.4]
+
+  * Added TextPad to the reconized editors.
+
 [http://isense-x.googlecode.com/files/ISense_1.5.3.rar 1.5.3]
 
   * SVN and homepage. See about box. 
