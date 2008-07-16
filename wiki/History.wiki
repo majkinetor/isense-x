@@ -2,12 +2,14 @@
 
   * Added TextPad to the reconized editors.
 
+
 [http://isense-x.googlecode.com/files/ISense_1.5.3.rar 1.5.3]
 
   * SVN and homepage. See about box. 
   * Methods are now automatic. Isense automaticaly chooses method based on the editor you run atm (freakkk) 
   * Added AHK and user functions (freakkk) 
   * ActiveGoTo integration (thx Rajat) 
+
 
 [http://www.autohotkey.net/~majkinetor/ISense/Isense_15.zip 1.5]
   * IE dll removed and now ISense use IE COM control created by Sean. This magicaly removed all bugs that were present so far.
