@@ -28,12 +28,13 @@ ActiveGoto EDITOR ISSUES:
     EmEditor
     Metapad
     Programers Notepad
+    TextPad
 */
 ;----------------------------------------------------------------------------------------------
 
 ActiveGoTo_Init()  {
   local Hotkeys, GuiGrp
-;   global ActiveGoTo_HtkGrp, ActiveGoTo_aEditorTitleRE, ActiveGoto_aGotoWinClassOrTitle
+;   global ActiveGoTo_HtkGrp, ActiveGoTo_aEditorTitleRE, 
 ;     , ActiveGoto_aGotoShortCut, ActiveGoTo_identifierRE, ActiveGoto_parameterListRE, ActiveGoto_lineCommentRE
   
 
@@ -54,28 +55,9 @@ ActiveGoTo_Init()  {
       ^Crimson Editor - \[(?P<Name>.*)\]$                                       ;Crimson
       ^(?P<UnSaved> \* )?(?P<Name>.*) - metapad$                                ;Metapad
       ^Programmers Notepad 2 - \[(?P<Name>.*)(?P<UnSaved>\*)?\]$                ;Programers Notepad
+      ^TextPad - (?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?$                       ;TextPad
     )
 ;       ^EditPlus(?: - \[)?(?P<Name>.*?)(?P<UnSaved> \*)?(?: R/O)?\]?$            ;EditPlus (original regex)
-
-  ;Class or Window Title of GoTo Window for the different editors     
-  ActiveGoto_aGotoWinClassOrTitle =
-    (LTrim Comments
-       ahk_class TfGotoLine       ;PSPad
-       ahk_class #32770           ;SciTE
-       ahk_class #32770           ;Notepad++
-       ahk_class #32770           ;Notepad2
-       ahk_class TForm            ;ConTEXT
-       ahk_class #32770           ;UltraEdit-32
-       ahk_class Afx:400000:8:10011:0:40727           ;EditPlus
-       ahk_class #32770           ;Notepad
-       ahk_class #32770           ;EmEditor
-       ahk_class TGoToDialog      ;SynPlus
-       ahk_class TGotoLineDialog  ;Syn
-       ahk_class #32770           ;Crimson
-       ahk_class #32770           ;Metapad
-       ahk_class #32770           ;Programers Notepad
-    )
-;        ahk_class #32770           ;EditPlus  (orginal class..)
 
   ;ShortCut for GoTo in Editor, in case it is different from Ctrl+g
   ActiveGoto_aGotoShortCut =
@@ -94,6 +76,7 @@ ActiveGoTo_Init()  {
        ^g     ;Crimson
        ^g     ;Metapad
        ^g     ;Programers Notepad
+       ^g     ;TextPad
     )
 
   ;Whether ActiveGoTo should track changes/open InfoGui       
@@ -113,6 +96,7 @@ ActiveGoTo_Init()  {
        False    ;Crimson
        True     ;Metapad
        True     ;Programers Notepad
+       True     ;TextPad
     )
 
   ;Method # used to retrieve the current line of text from editor      ;***
@@ -132,6 +116,7 @@ ActiveGoTo_Init()  {
        3     ;Crimson
        3     ;Metapad
        2     ;Programers Notepad
+       3     ;TextPad
     )
 
   ;Method # used to send the desired cmd/function                      
@@ -151,11 +136,11 @@ ActiveGoTo_Init()  {
        1     ;Crimson
        1     ;Metapad
        1     ;Programers Notepad
+       1     ;TextPad
     )
     
-  ;Create arrays from the above three lists
+  ;Create arrays from the above lists
   StringSplit, ActiveGoTo_aEditorTitleRE      , ActiveGoTo_aEditorTitleRE      , `n
-  StringSplit, ActiveGoto_aGotoWinClassOrTitle, ActiveGoto_aGotoWinClassOrTitle, `n
   StringSplit, ActiveGoto_aGotoShortCut       , ActiveGoto_aGotoShortCut       , `n
 
   StringSplit, ActiveGoto_aMonitorDocument    , ActiveGoto_aMonitorDocument    , `n       
@@ -525,13 +510,12 @@ GotoPos(Row="")  {
 
 ;send position to editor
 SendGoTo(Position)  {
-    Global ActiveGoTo_EditorHWND, ActiveGoto_aGotoWinClassOrTitle, ActiveGoto_aGotoShortCut
+    Global ActiveGoTo_EditorHWND, ActiveGoto_aGotoShortCut
     WinActivate, ahk_id %ActiveGoTo_EditorHWND%
-    WinWaitActive, ahk_id %ActiveGoTo_EditorHWND%
+;     WinWaitActive, ahk_id %ActiveGoTo_EditorHWND%   ; overkill
     Send, %ActiveGoto_aGotoShortCut%
     Send, %Position%{Enter}
 }
-
 
 ;return key value from script
 ReadIni(Key, Default=""){
@@ -720,7 +704,6 @@ ActiveGoTo_EditorTitleCheck( ) {
     OR (  !InStr(FileUnSaved,"*")
         AND !PreviousSaveStatus)){        ;or when file got saved
       ActiveGoTo_EditorHWND            = %HWND%
-      ActiveGoto_aGotoWinClassOrTitle := ActiveGoto_aGotoWinClassOrTitle%EType%
       ActiveGoto_aGotoShortCut        := ActiveGoto_aGotoShortCut%EType%
       GenerateBM( FileName )              ;trigger bookmark (BM) generation
       LastFileName = %FileName%

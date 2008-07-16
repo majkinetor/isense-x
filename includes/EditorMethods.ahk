@@ -56,7 +56,7 @@ ISense_GetLineMethod2()
 GetLineMethod3:  Temporarily uses windows clipboard to retrieve text.
                  Used for editors that '{right}' returns your position to right side of selected text.
 
-  Editors:  PSPad, Notepad2, Crimson, Metapad, EditPlus
+  Editors:  PSPad, Notepad2, Crimson, Metapad, EditPlus, TextPad
 */
 
 ISense_GetLineMethod3()
@@ -115,7 +115,7 @@ ISense_GetLineMethod4()
 SendSelectionMethod1:  Used for most editors.  (default method if editor isn't reconized..)
 
   Editors:  SciTE, Notepad++, Notepad2, ConTEXT, UltraEdit-32, EditPlus, Notepad
-          , EmEditor, SynPlus, Syn, Crimson, Metapad, Programers Notepad
+          , EmEditor, SynPlus, Syn, Crimson, Metapad, Programers Notepad, TextPad
 */
 
 ISense_SendSelectionMethod1( Selection, Type )
