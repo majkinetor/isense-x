@@ -8,18 +8,17 @@ CoordMode, Tooltip, Screen
 	ISENSE_Init()	
 return
 
-
 ISENSE_Init( lastGUI=0, subMenu="", bStandalone=true )
 {
 	local hasConfig		   
 
-	CoordMode, Caret, screen			; required
-	SetKeyDelay, 0						; required
+	CoordMode, Caret, screen		; required
+	SetKeyDelay, 0						  ; required
 	SetTitleMatchMode, 2				; required
 	
 	;set merging environment
-	Isense_title		:= "ISense"	
-	Isense_version		:= "1.5.3"
+	Isense_title		  := "ISense"
+	Isense_version		:= "1.5.4"
 	ISense_standalone	:= bStandalone
 	ISense_trayMenu		:= subMenu
   
