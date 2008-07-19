@@ -132,12 +132,11 @@ ISHelp_GetHelpPage( pCmnd )
 
   if !initialised
   {
-    ISense_m_SendMessage        =  commands/PostMessage
-    ISense_m_IfWinNotActive     =  commands/IfWinActive
-    ISense_m_IfWinNotExist      =  commands/IfWinExist
-    ISense_m_StringTrimRight    =  commands/StringTrimLeft
-    ISense_m_StringUpper        =  commands/StringLower
-    ISense_m__IfWinExist        =  commands/_IfWinActive
+    ISense_m_SendMessage        =  commands/PostMessage.htm
+    ISense_m_IfWinNotActive     =  commands/IfWinActive.htm
+    ISense_m_IfWinNotExist      =  commands/IfWinExist.htm
+    ISense_m_StringTrimRight    =  commands/StringTrimLeft.htm
+    ISense_m_StringUpper        =  commands/StringLower.htm
 
     ;commands/Send.htm
     AnchorList = SendRaw,SendInput,SendPlay

@@ -140,7 +140,7 @@ Isense_HandleSelection( pSel )  {
     LangRE     := "J)("
                 .   "(?P<Ignore>^(?P<Start>.*)\((?U).*(?-U)\)(?P<End>.*))" . "|"
                 .   "(?P<Found>(.* )?(?P<Cmnd>[^\(]*\()(?P<Params>.*))"    . "|"
-                .   "(?P<Found>(?P<Cmnd>[a-zA-Z0-9_\s]+),?(?P<Params>.*))"
+                .   "(?P<Found>(?P<Cmnd>[a-zA-Z0-9_#]+)(,|\s)?(?P<Params>.*))"
                 . "$)"
     init := true
   }
