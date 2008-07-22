@@ -68,6 +68,7 @@ ISense_GetLineMethod3()
 
 	;get selection
 	oldClip := clipboardall
+	clipboard =
 	Send,  +{HOME}
 	Send,  ^c
 	Sleep, 50
@@ -95,6 +96,7 @@ ISense_GetLineMethod4()
 	Send, %A_Space%
 
 	oldClip := clipboardall
+	clipboard =
 	Send,  +{HOME}
 	Send,  ^c
 	Sleep, 50
