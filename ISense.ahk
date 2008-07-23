@@ -138,14 +138,13 @@ Isense_HandleSelection( pSel )  {
   If !init  {     ;--this can be pulled from ini...
     Lang_Delim := ","
     LangRE     := "J)("
-                .   "(?P<Ignore>^(?P<Start>.*)\((?U).*(?-U)\)(?P<End>.*))" . "|"
-                .   "(?P<Ignore>^.*((\s)?% )(?P<Start>[^,]+$))" . "|"
-                .   "(?P<Found>(.* )?(?P<Cmnd>[^\(]*\()(?P<Params>.*))"    . "|"
+                .   "(?P<Ignore>^(?P<Start>.*)(\s|,).*\((?U).*(?-U)\)(?P<End>.*))" . "|"
+                .   "(?P<Ignore>^.*((\+|-|\*|/|&|\^|\|<|>|!|\?|AND|OR|:)(=)?|(\s)?% )(\s)?(?P<Start>[^,]+$))" . "|"
+                .   "(?P<Found>(.* )?(?P<Cmnd>[^\(]+\()(?P<Params>.*))"            . "|"
                 .   "(?P<Found>(?P<Cmnd>[a-zA-Z0-9_#]+)(,|\s)?(?P<Params>.*))"
                 . "$)"
     init := true
   }
-;   (:=|+=|-=|*=|/=|//=|.=|\|=|&=|^=|>>=|<<=|= % )
 
 	;remove spaces and tabs from the start of the selection
 	ISense_TrimLeft( pSel )
