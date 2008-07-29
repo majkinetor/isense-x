@@ -139,7 +139,7 @@ Isense_HandleSelection( pSel )  {
     Lang_Delim := ","
     LangRE     := "J)("
                 .   "(?P<Ignore>^(?P<Start>.*)(\s|,).*\((?U).*(?-U)\)(?P<End>.*))" . "|"
-                .   "(?P<Ignore>^.*((\+|-|\*|/|&|\^|\|<|>|!|\?|AND|OR|:)(=)?|(\s)?% )(\s)?(?P<Start>[^,]+$))" . "|"
+                .   "(?P<Ignore>^.*((\.|\+|-|\*|/|&|\^|\|<|>|!|\?|AND|OR|:)(=)?|(\s)?% )(\s)?(?P<Start>[^,]+$))" . "|"
                 .   "(?P<Found>(.* )?(?P<Cmnd>[^\(]+\()(?P<Params>.*))"            . "|"
                 .   "(?P<Found>(?P<Cmnd>[a-zA-Z0-9_#]+)(,|\s)?(?P<Params>.*))"
                 . "$)"

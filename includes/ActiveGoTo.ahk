@@ -37,6 +37,10 @@ ActiveGoTo_Init()  {
 ;   global ActiveGoTo_HtkGrp, ActiveGoTo_aEditorTitleRE, 
 ;     , ActiveGoto_aGotoShortCut, ActiveGoTo_identifierRE, ActiveGoto_parameterListRE, ActiveGoto_lineCommentRE
   
+  ;-- Dynamic func notes --
+  Lang_ExtractSectionInfo := ""   ; Define custom func for extracting sub/UDF info
+  Lang_GetFileData := ""          ; Define custom func for extracting filedata..
+
 
   ;RegEx for window titles of different editors     ***
   ActiveGoTo_aEditorTitleRE =
@@ -147,12 +151,6 @@ ActiveGoTo_Init()  {
   StringSplit, Isense_aGetLineMethod          , Isense_aGetLineMethod          , `n       
   StringSplit, Isense_aSendLineMethod         , Isense_aSendLineMethod         , `n       
 
-
-  ;Regex to get AHK syntax right
-  ActiveGoTo_identifierRE    = ][#@$?\w                  ; Legal chars for AHK identifiers (var & func names)
-  ActiveGoto_parameterListRE = %ActiveGoTo_identifierRE%,=".\s-  ; Legal chars in func def params
-  ActiveGoto_lineCommentRE   = \s*?(?:\s;.*)?$          ; Legal line comment regex for performance
-
   ;build gui
   RoutineInfoGui_Create()
 
@@ -209,10 +207,6 @@ ActiveGoTo_Init()  {
 RoutineInfoGui_Create() {
   Global ActiveGoTo_GUI, ActiveGoTo_HWND, MaxVisibleListViewRows, Search, TxtOffset
         , Offset, SubFunc, Limit, SelItem
-  ; SubVersion Keywords, also available: LastChangedBy, HeadURL
-  RegExMatch("$LastChangedRevision: 12 $"
-           . "$LastChangedDate: 2006-12-07 23:01:24 +0100 (Do, 07 Dez 2006) $"
-           , "(?P<Num>\d+).*?(?P<Date>(?:\d+-?){3})", SVN_Rev)
 
   ;MaxVisible Rows of Listview
   MaxVisibleListViewRows := A_ScreenHeight // 16
@@ -261,62 +255,11 @@ global
   Return
 }
 ;----------------------------------------------------------------------------------------------
+; Fill listview from BM array.  Temporary dispatcher until I think through more..
+RoutineInfoGui_FillList:                    
+  RoutineInfoGui_FillList()
+return
 
-RoutineInfoGui_FillList:                    ; Fill listview from BM array
-  SetBatchLines, -1
-  Gui, %ActiveGoTo_GUI%:Default
-  Gui, %ActiveGoTo_GUI%:Submit, NoHide
-  LV_Delete()                                  ;remove old content
-  GuiControl, %ActiveGoTo_GUI%:-Redraw, SelItem
-  
-  If ( (Search AND !Limit AND !SubFunc)        ;show full list for search
-         OR (!Search AND !SubFunc) ){          ;show full list
-      Loop, %id%
-          If (Position%A_Index% > Offset)
-              LV_Add("", Position%A_Index%,Text%A_Index%)
-  }Else If (Search AND Limit AND !SubFunc){    ;show limited list for search
-      Loop, %id%
-          If InStr(Text%A_Index%, Search)
-              If (Position%A_Index% > Offset)
-                  LV_Add("", Position%A_Index%,Text%A_Index%)
-  }Else If (Search AND Limit AND SubFunc){     ;show limited subFunc list for search
-      Loop, %id%
-          If (InStr(Text%A_Index%, Search) and Type%A_Index% = SubFunc)
-              If (Position%A_Index% > Offset)
-                  LV_Add("", Position%A_Index%,Text%A_Index%)
-  }Else If ( (Search AND !Limit AND SubFunc)   ;show subFunc list for search
-         OR (!Search AND SubFunc) )            ;show subFunc list
-      Loop, %id%
-          If (Type%A_Index% = SubFunc)
-              If (Position%A_Index% > Offset)
-                  LV_Add("", Position%A_Index%,Text%A_Index%)
-  LV_ModifyCol(1, "Auto")                     ;adjust width
-  LV_ModifyCol(2, "Auto")
-
-  If ActiveGoTo_AdjustHeight {
-      ListViewHeight := 45 + 14 * ( LV_GetCount() < MaxVisibleListViewRows ? LV_GetCount() : MaxVisibleListViewRows)
-      GuiControl,  %ActiveGoTo_GUI%:Move, SelItem, h%ListViewHeight%
-      Hide := GuiVisible ? "" : "Hide"
-      Gui, %ActiveGoTo_GUI%:Show, Autosize %Hide%
-    }
-
-  GuiControl, %ActiveGoTo_GUI%:+Redraw, SelItem
-  GoSub, RoutineInfoGui_HighlightItems                       ;reapply last search
-  
-  ISense_DynamicCmds := ""
-  Loop, %id%
-    If Type%A_Index% = -1
-    {
-      RegExMatch( Text%A_Index%, "(.*)\((.*)\)", m)
-      If m2
-        ISense_DynamicCmds .= m1 . "()," . m2 . "`n"
-      Else
-        ISense_DynamicCmds .= m1 . "()`n"
-      ISense_m_%m1%[] := "about:" . m1 . "(" . m2 . ")"        ; dynamic function help
-      
-    }
-  ISense_CreateSyntaxArray( ISense_AllStaticCmds . "`n" . ISense_DynamicCmds )
-Return
 ;-----
 RoutineInfoGui_HighlightItems:              ;highlight items in listview
   Loop % LV_GetCount() {             ;highlight all which contain search
@@ -384,128 +327,26 @@ RoutineInfoGui_Size:
 Return
 ;----------------------------------------------------------------------------------------------
 
-;generate BM array
-GenerateBM( FileName ){
-    local state,CurrLine,hotkey,hotkeyName
-         ,function,functionName,functionLine,functionClosingParen,functionOpeningBrace
-         ,functionParameters,functionParametersEX,hotstring,hotstringName,label,labelName
-;     Global ActiveGoTo_identifierRE, ActiveGoto_parameterListRE, ActiveGoto_lineCommentRE
-    SetBatchLines, -1
-    id = 0                                        ;reset index of BM array
-    FileRead, FileData, %FileName%                ;read file
-    state = DEFAULT
-    Loop, Parse, FileData, `n, `r                 ;search for bookmarks
-      {
-        CurrLine = %A_LoopField%                  ;remove spaces and tabs
-        
-        If RegExMatch(CurrLine, "^\s*(?:;.*)?$") ; Empty line or line with comment, skip it
-            Continue
-                 
-        Else If InStr(state, "COMMENT"){             ; In a block comment
-            If RegExMatch(CurrLine, "S)^\s*\*/")     ; End of block comment
-                StringReplace state, state, COMMENT  ; Remove state
-                ; "*/ function_def()" is legal but quite perverse... I won't support this
-      
-        }Else If InStr(state,"CONTSECTION") {        ; In a continuation section
-            If RegExMatch(CurrLine, "^\s*\)")        ; End of continuation section
-                state = DEFAULT
-  
-        }Else If RegExMatch(CurrLine, "^\s*/\*")         ; Start of block comment, to skip
-            state = %state% COMMENT
-      
-        Else If RegExMatch(CurrLine, "^\s*\(")           ; Start of continuation section, to skip
-            state = CONTSECTION
-      
-        ;hotstring RegEx
-          ;very strict : "i)^\s*(?P<Name>:(?:\*0?|\?0?|B0?|C[01]?|K(?:-1|\d+)|O0?|P\d+|R0?|S[IPE]|Z0?)*:.+?)::"
-          ;less strict : "i)^\s*:[*?BCKOPRSIEZ\d-]*:(?P<Name>.+?)::"
-        ;loose         : "^\s*:[*?\w\d-]*:(?P<Name>.+?)::" 
-        ;the loose RegEx doesn't need update when new features get added
-      
-        Else If RegExMatch(CurrLine, "^\s*:[*?\w\d-]*:(?P<Name>.+?)::", hotstring){ ;HotString
-            AddToBMArray(A_Index, ".." . hotstringName . "::")
-            state = DEFAULT
-  
-        }Else If RegExMatch(CurrLine, "i)^\s*(?P<Name>[^ \s]+?(?:\s+&\s+[^\s]+?)?(?:\s+up)?)::", hotkey){  ;Hotkey
-            AddToBMArray(A_Index,hotkeyName . "::")
-            state = DEFAULT
-      
-        }Else If RegExMatch(CurrLine, "^\s*(?P<Name>[^\s,```%]+):" . ActiveGoto_lineCommentRE, label){   ; Label are very tolerant...
-            AddToBMArray(A_Index,labelName . ":", 1)
-            state = DEFAULT
-        
-        }Else If InStr(state,"DEFAULT"){
-            If RegExMatch(CurrLine, "^\s*(?P<Name>[" . ActiveGoTo_identifierRE . "]+)"         ; Found a function call or a function definition
-                              . "\((?P<Parameters>[" . ActiveGoto_parameterListRE . "]*)"
-                              . "(?P<ClosingParen>\)\s*(?P<OpeningBrace>\{)?)?"
-                              . ActiveGoto_lineCommentRE, function){
-                state = FUNCTION
-                functionLine := A_Index
-                If functionClosingParen{        ; With closed parameter list
-                    If functionOpeningBrace {     ; Found! This is a function definition
-                        AddToBMArray(functionLine,functionName . "(" . functionParameters . ")", - 1)
-                        state = DEFAULT
-                    }Else                         ; List of parameters is closed, just search for opening brace
-                        state .= " TOBRACE"
-                }Else                           ; With open parameter list
-                    state .= " INPARAMS"      ; Search for closing parenthesis
-                  }
-        
-        }Else If InStr(state,"FUNCTION"){
-            If InStr(state, "INPARAMS") {     ; After a function definition or call
-                ; Looking for ending parenthesis
-                If (RegExMatch(CurrLine, "^\s*(?P<ParametersEX>,[" . ActiveGoto_parameterListRE . "]+)"
-                                   . "(?P<ClosingParen>\)\s*(?P<OpeningBrace>\{)?)?" . ActiveGoto_lineCommentRE, function) > 0){
-                    functionParameters .= functionParametersEX
-                    If functionClosingParen {            ; List of parameters is closed
-                        If functionOpeningBrace{   ; Found! This is a function definition
-                          AddToBMArray(functionLine,functionName . "(" . functionParameters . ")", -1)
-                          state = DEFAULT
-                        }Else                              ; Just search for opening brace
-                          StringReplace state, state, INPARAMS, TOBRACE ; Remove state
-                      }                                    ; Otherwise, we continue
-                }Else   
-                    ; Incorrect syntax for a parameter list, it was probably just a function call, e.g. contained a "+"
-                    state = DEFAULT
-            }Else If InStr(state,"TOBRACE"){ ; Looking for opening brace. There can be only empty lines and comments, which are already processed
-                If (RegExMatch(CurrLine, "^\s*(?:\{)" . ActiveGoto_lineCommentRE) > 0){  ; Found! This is a function definition
-                    AddToBMArray(functionLine,functionName . "(" . functionParameters . ")", -1)
-                    state = DEFAULT
-                }Else  ; Incorrect syntax between closing parenthesis and opening brace,
-                    state = DEFAULT     ; it was probably just a function call
-            }
-          }
-      }
-    GoSub, RoutineInfoGui_FillList
-  }
-
-;generate BM Array
-AddToBMArray(Pos, Text, Type =""){
-    global
-    id++                  ;add BM to array
-    Text%id% := RegExReplace(Text, "\s\s*", " ")  ; Replace multiple blank chars with simple space
-    Position%id% = %Pos%
-    Type%id% = %Type%
-  }
 
 
 ;find goto position
 GotoPos(Row="")  {
-    static LastPos,LastB4LastPos
-    If Row {                          
-        LV_GetText(Pos, Row, 1)       ;get pos of row
-        SendGoTo(Pos)                 ;send position
-        If !LastPos                   ;remember positions
-            LastPos = %Pos%
-        LastB4LastPos = %LastPos%     
+  static LastPos,LastB4LastPos
+  If Row  {
+    LV_GetText(Pos, Row, 1)       ;get pos of row
+    SendGoTo(Pos)                 ;send position
+    If !LastPos                   ;remember positions
         LastPos = %Pos%
-    }Else {
-        SendGoTo(LastB4LastPos)       ;send previous position
-        swap = %LastB4LastPos%        ;swap last with previous position
-        LastB4LastPos = %LastPos%
-        LastPos = %swap%
-      }
-    GoSub, RoutineInfoGui_Escape      ;hide gui
+    LastB4LastPos = %LastPos%
+    LastPos = %Pos%
+  }
+  Else  {
+    SendGoTo(LastB4LastPos)       ;send previous position
+    swap = %LastB4LastPos%        ;swap last with previous position
+    LastB4LastPos = %LastPos%
+    LastPos = %swap%
+  }
+  GoSub, RoutineInfoGui_Escape      ;hide gui
 }
 
 ;send position to editor
@@ -671,7 +512,7 @@ Return
 
 ;check editor window title for change
 ActiveGoTo_EditorTitleCheck( ) {
-  local HWND, EType, WinTitle, Extension, File, FileName, FileUnSaved
+  local HWND, EType, WinTitle, Extension, File, FileName, FileUnSaved, FileData
   static PreviousSaveStatus,LastFileName
   ;global ActiveGoTo_aEditorTitleRE, ActiveGoTo_EditorHWND, ActiveGoto_aGotoShortCut
 
@@ -705,7 +546,22 @@ ActiveGoTo_EditorTitleCheck( ) {
         AND !PreviousSaveStatus)){        ;or when file got saved
       ActiveGoTo_EditorHWND            = %HWND%
       ActiveGoto_aGotoShortCut        := ActiveGoto_aGotoShortCut%EType%
-      GenerateBM( FileName )              ;trigger bookmark (BM) generation
+
+
+      ;-- Editor specific extraction of data
+      If Lang_GetFileData                   
+        FileData := %Lang_GetFileData%()
+      Else
+        FileRead, FileData, %FileName%      ; Generic..
+
+      ;-- Language specific extraction of sub/UDF data
+      If Lang_ExtractSectionInfo            
+        %Lang_ExtractSectionInfo%( FileData )
+      Else
+        ISense_ExtractSubInfo( FileData )  ; Generic..
+        
+;       GenerateBM( FileName )
+      
       LastFileName = %FileName%
       PreviousSaveStatus := True
   }Else If InStr(FileUnSaved,"*")
@@ -750,3 +606,187 @@ ActiveGoTo_EditorTypeCheck()  {       ; GetEditorHWNDandType - Check for open ed
 }
 
 ;----------------------------------------------------------------------------------------------
+;   #######################################################################################
+;----------------------------------------------------------------------------------------------
+
+;generate BM array
+; GenerateBM( FileData )  {     ;***
+ISense_ExtractSubInfo( FileData )  {
+  AddToBMArray()                             ;reset index of BM array
+
+  state = DEFAULT
+
+  static init, LangRE
+  If !init  {     ;--this can be pulled from ini or Lang_AHK_Init()...
+    init := true
+
+    ;Regex to get AHK syntax right
+    identifierRE    = ][#@$?\w               ; Legal chars for AHK identifiers (var & func names)
+    parameterListRE = %identifierRE%,=".\s-  ; Legal chars in func def params
+    lineCommentRE   = \s*?(?:\s;.*)?$        ; Legal line comment regex for performance
+    parameterListRE = ][#@$?\w,=".\s-        ; Legal chars in func def params
+
+    LangRE := "JS)("
+          .   "(?P<CommentLine>"       . "^\s*(?:;.*)?$"           . ")" . "|" ; Empty line or line with comment, skip it
+          .   "(?P<CommentBlockEnd>"   . "^\s*\*/"                 . ")" . "|" ; End of block comment
+          .   "(?P<ContSectionEnd>"    . "^\s*\)"                  . ")" . "|" ; End of continuation section
+          .   "(?P<CommentBlockStart>" . "^\s*\*/"                 . ")" . "|" ; Start of block comment, to skip
+          .   "(?P<ContSectionStart>"  . "^\s*\)"                  . ")" . "|" ; Start of continuation section, to skip
+          .   "(?P<Hotstring>" . "^\s*:[*?\w\d-]*:(?P<Name>.+?)::" . ")" . "|" ; Hotstring
+          .   "(?P<Hotkey>"    . "(?i)^\s*(?P<Name>[^ \s]+?(?:\s+&\s+[^\s]+?)?(?:\s+up)?)::(?-i)" . ")" . "|" ; Hotkey
+          .   "(?P<Label>"     . "^\s*(?P<Name>[^\s,```%]+):"      . ")" . "|" ; Label
+          .   "(?P<Func>"    . "^\s*(?P<Name>[" . identifierRE . "]+)\("       ; Function Definition
+                             . "(?P<Parameters>[" . parameterListRE . "]*)"
+                             . "(?P<ClosingParen>\)\s*(?P<OpeningBrace>\{)?)?"
+                             . lineCommentRE                       . ")" . "|"
+          .   "(?P<FuncMultiLine>" . "^\s*(?P<Parameters>,[" . parameterListRE . "]+)"  ; Func Def where params span more than 1 line
+                             . "(?P<ClosingParen>\)\s*(?P<OpeningBrace>\{)?)?" . lineCommentRE . ")" . "|"
+          .   "(?P<FuncOpeningBrace>" . "^\s*(?:\{)" . ")"  ; Func Def where opening brace isn't on same line as definition
+          . "$)"
+  }
+
+  Loop, Parse, FileData, `n, `r            ; search for bookmarks
+  {
+    CurrLine = %A_LoopField%               ; remove spaces and tabs
+    If !RegExMatch(CurrLine, LangRE, Found_ )
+      Continue
+
+    If Found_CommentLine                   ; Empty line or line with comment, skip it
+      Continue
+
+    Else If Found_CommentBlockEnd  &&  InStr(state, "COMMENT")      ; End of comment section
+      StringReplace state, state, COMMENT
+
+    Else If Found_ContSectionEnd   &&  InStr(state, "CONTSECTION")  ; End of continuation section
+      state = DEFAULT
+
+    Else If Found_CommentBlockStart        ; Start of block comment, to skip
+      state .= " COMMENT"
+
+    Else If Found_ContSectionStart         ; Start of continuation section, to skip
+      state = CONTSECTION
+
+    Else If Found_Hotstring                ; Hotring
+      state := "DEFAULT" , AddToBMArray(A_Index, ".." . Found_Name . "::")
+
+    Else If Found_Hotkey                   ; Hotkey
+      state := "DEFAULT" , AddToBMArray(A_Index, Found_Name . "::")
+
+    Else If Found_Label                    ; Label
+      state := "DEFAULT" , AddToBMArray(A_Index, Found_Name . ":", 1)
+
+;--- Func Definitions ---
+ ;- Cases where opening brace is on same line as definition..
+    Else If Found_Func   &&  InStr(state, "DEFAULT")  { ; Found func call or definition
+      state := "FUNCTION" , func_LineNum := A_Index , func_Name := Found_name , func_Params := Found_Parameters
+      If Found_ClosingParen                          ;-- With closed parameter list?
+        ; Found! This is a function definition
+        Found_OpeningBrace ? ( state := "DEFAULT" , AddToBMArray(func_LineNum, func_Name . "(" . func_Params . ")", - 1) )
+                           : ( state .= " TOBRACE" )   ; List of params is closed, just search for opening brace
+      Else                                           ;-- With open parameter list?
+        state .= " INPARAMS"                           ; ..Search for closing parenthesis
+    }
+
+
+    Else If InStr(state,"FUNCTION")  {
+
+ ;- Cases where parameters span more than one line..
+      If InStr(state, "INPARAMS")  {    ; After a function definition or call
+        If Found_FuncMultiLine  {       ; Looking for ending parenthesis
+          func_Params .= Found_Parameters
+          If Found_ClosingParen  {                        ; List of parameters is closed
+            If Found_OpeningBrace                         ; Found! This is a function definition
+              state := "DEFAULT" , AddToBMArray(func_LineNum, func_Name . "(" . func_Params . ")", -1)
+            Else                                            ; Just search for opening brace
+              StringReplace state, state, INPARAMS, TOBRACE ; Remove state
+          }                                                 ; Otherwise, we continue
+        }
+        Else   ; Incorrect syntax for param list, it was probably just a func call, e.g. contained a "+"
+          state = DEFAULT
+      }
+
+
+ ;- Cases where opening brace isn't on same line as func definition..
+      Else If InStr(state,"TOBRACE")   ; Looking for opening brace. There can be only empty lines and comments, which are already processed
+        state := "DEFAULT" , Found_FuncOpeningBrace ? ( AddToBMArray(func_LineNum, func_Name . "(" . func_Params . ")", -1) )
+
+    }
+
+  }
+  RoutineInfoGui_FillList()
+}
+
+
+;----
+
+;generate BM Array
+AddToBMArray(Pos="", Text="", Type="")  {       ;***
+  global
+  If !Pos  {
+    id = 0              ;reset index of BM array
+    return
+  }
+  id++                  ;add BM to array
+  Text%id% := RegExReplace(Text, "\s\s*", " ")  ; Replace multiple blank chars with simple space
+  Position%id% = %Pos%
+  Type%id% = %Type%
+}
+
+;----
+
+RoutineInfoGui_FillList()  {
+  global
+  SetBatchLines, -1
+  Gui, %ActiveGoTo_GUI%:Default
+  Gui, %ActiveGoTo_GUI%:Submit, NoHide
+  LV_Delete()                                  ;remove old content
+  GuiControl, %ActiveGoTo_GUI%:-Redraw, SelItem
+
+  If ( (Search AND !Limit AND !SubFunc)        ;show full list for search
+         OR (!Search AND !SubFunc) ){          ;show full list
+      Loop, %id%
+          If (Position%A_Index% > Offset)
+              LV_Add("", Position%A_Index%,Text%A_Index%)
+  }Else If (Search AND Limit AND !SubFunc){    ;show limited list for search
+      Loop, %id%
+          If InStr(Text%A_Index%, Search)
+              If (Position%A_Index% > Offset)
+                  LV_Add("", Position%A_Index%,Text%A_Index%)
+  }Else If (Search AND Limit AND SubFunc){     ;show limited subFunc list for search
+      Loop, %id%
+          If (InStr(Text%A_Index%, Search) and Type%A_Index% = SubFunc)
+              If (Position%A_Index% > Offset)
+                  LV_Add("", Position%A_Index%,Text%A_Index%)
+  }Else If ( (Search AND !Limit AND SubFunc)   ;show subFunc list for search
+         OR (!Search AND SubFunc) )            ;show subFunc list
+      Loop, %id%
+          If (Type%A_Index% = SubFunc)
+              If (Position%A_Index% > Offset)
+                  LV_Add("", Position%A_Index%,Text%A_Index%)
+  LV_ModifyCol(1, "Auto")                     ;adjust width
+  LV_ModifyCol(2, "Auto")
+
+  If ActiveGoTo_AdjustHeight {
+      ListViewHeight := 45 + 14 * ( LV_GetCount() < MaxVisibleListViewRows ? LV_GetCount() : MaxVisibleListViewRows)
+      GuiControl,  %ActiveGoTo_GUI%:Move, SelItem, h%ListViewHeight%
+      Hide := GuiVisible ? "" : "Hide"
+      Gui, %ActiveGoTo_GUI%:Show, Autosize %Hide%
+    }
+
+  GuiControl, %ActiveGoTo_GUI%:+Redraw, SelItem
+  GoSub, RoutineInfoGui_HighlightItems                       ;reapply last search
+
+  ISense_DynamicCmds := ""
+  Loop, %id%
+    If Type%A_Index% = -1
+    {
+      RegExMatch( Text%A_Index%, "(.*)\((.*)\)", m)
+      If m2
+        ISense_DynamicCmds .= m1 . "()," . m2 . "`n"
+      Else
+        ISense_DynamicCmds .= m1 . "()`n"
+      ISense_m_%m1%[] := "about:" . m1 . "(" . m2 . ")"  ; dynamic function help    ;***
+    }
+  ISense_CreateSyntaxArray( ISense_AllStaticCmds . "`n" . ISense_DynamicCmds )
+  Return
+}
