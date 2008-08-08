@@ -10,14 +10,10 @@
   
   WinGetTitle, title, A
   ISense_ValidateCurrentEditor( title ) ; Set initial values based on current window
-  ToolTip()   ; refresh debugging window
+  ToolTip()                             ; refresh debugging window
 
-  ; Set event hooks to monitor editor (recycled from dock.ahk  :)  
-  ISense_hookProcAdr := RegisterCallback("ISense_OnEditorChange")
-  API_SetWinEventHook(3,3,0,Event_hookProcAdr,0,0,0)			  	  ; EVENT_SYSTEM_FOREGROUND (window changed)
-;   API_SetWinEventHook(0x800B,0x800B,0,ISense_hookProcAdr,0,0,0)	; EVENT_OBJECT_LOCATIONCHANGE
-  API_SetWinEventHook(0x8002,0x8003,0,ISense_hookProcAdr,0,0,0)	; EVENT_OBJECT_SHOW, EVENT_OBJECT_HIDE
-  API_SetWinEventHook(0x800C,0x800C,0,ISense_hookProcAdr,0,0,0)	; EVENT_OBJECT_NAMECHANGE  (http://www.autohotkey.com/forum/topic19367-64.html)
+  ; Set event hooks to monitor editor 
+  ISense_EnableEditorHook(true)
 
   ; Set keyboard hooks to monitor typing
   keys := "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,"
@@ -26,11 +22,18 @@
   Loop, Parse, keys, `,
     Hotkey, ~*%A_LoopField%, ISense_OnKeyPressDispatch
   Hotkey, ~*`,, ISense_OnKeyPressDispatch
+  
+  OnExit,  ISense_OnExit
 return  ; #### End of auto-execute section  ####
 ;-------------------------------------------------------------------------
 
-^l::reload 
+^l::reload
 ^q::exitapp
+
+ISense_OnExit:
+  ISense_EnableEditorHook(false)
+ExitApp
+
 
 ;---
 ISense_OnKeyPressDispatch:
@@ -51,6 +54,36 @@ ISense_HotkeyHandler()  {
     ISense_lastWord := SubStr( ISense_lastWord, 1, StrLen( ISense_lastWord ) - 1 )
   Else
     ISense_lastWord .= key
+}
+
+;---
+ISense_EnableEditorHook( enable="true" )  {
+   static hookProcAdr, hHook1, hHook2, hHook3, hHook4
+;   (recycled from dock.ahk  :) )
+
+  if (enable && hHook1)
+    return true
+
+  if !enable
+    API_UnhookWinEvent(hHook1), API_UnhookWinEvent(hHook2), API_UnhookWinEvent(hHook3)
+    , DllCall("GlobalFree", "UInt", hookProcAdr)
+    , hHook1 := hHook2 := hHook3 := hHook4 := hookProcAdr := ""
+  else  {
+
+    if !hookProcAdr
+      hookProcAdr := RegisterCallback("ISense_OnEditorChange")
+
+    hHook1 := API_SetWinEventHook(3,3,0,hookProcAdr,0,0,0)			  	  ; EVENT_SYSTEM_FOREGROUND (window changed)
+    hHook2 := API_SetWinEventHook(0x8002,0x8003,0,hookProcAdr,0,0,0)	; EVENT_OBJECT_SHOW, EVENT_OBJECT_HIDE
+    hHook3 := API_SetWinEventHook(0x800C,0x800C,0,hookProcAdr,0,0,0)	; EVENT_OBJECT_NAMECHANGE  (http://www.autohotkey.com/forum/topic19367-64.html)
+;     hHook4 := API_SetWinEventHook(0x800B,0x800B,0,hookProcAdr,0,0,0)	; EVENT_OBJECT_LOCATIONCHANGE
+
+    if !(hHook1 && hHook2 && hHook3) {	   ;some of them failed, unregister everything
+      API_UnhookWinEvent(hHook1), API_UnhookWinEvent(hHook2), API_UnhookWinEvent(hHook3)
+      return false
+    }
+  }
+  return true
 }
 
 ;---
@@ -182,6 +215,10 @@ ISense_ValidateEditorPlugins()  {
 API_SetWinEventHook(eventMin, eventMax, hmodWinEventProc, lpfnWinEventProc, idProcess, idThread, dwFlags) {
    DllCall("CoInitialize", "uint", 0)
    return DllCall("SetWinEventHook", "uint", eventMin, "uint", eventMax, "uint", hmodWinEventProc, "uint", lpfnWinEventProc, "uint", idProcess, "uint", idThread, "uint", dwFlags)
+}
+
+API_UnhookWinEvent( hWinEventHook ) {
+   return DllCall("UnhookWinEvent", "uint", hWinEventHook)
 }
 
 ;---
